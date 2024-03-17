@@ -63,15 +63,17 @@ class MainActivity : ComponentActivity() {
 
         setupGpio().ifPresent { error ->
             run {
+                println("Error: $error")
+
                 val notificationService =
                     getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
                 val notification = android.app.Notification.Builder(this, "raspitainment")
                     .setContentTitle("Raspitainment").setContentText("Error: $error")
                     .setSmallIcon(android.R.drawable.stat_notify_error).build()
 
-                notificationService.notify(1, notification)
+                Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
 
-                finish()
+                notificationService.notify(1, notification)
             }
         }
 

@@ -27,14 +27,18 @@ Java_com_example_raspitainment_MainActivity_00024Companion_setupGpio(JNIEnv *env
     if (ret == -1) {
         char buf[500];
         sprintf(buf, "Error exporting GPIO 26: %s", strerror(errno));
-        return makeOptionalString(env, false, buf);
+        return makeOptionalString(env, true, buf);
+    } else if (ret != 0) {
+        return makeOptionalString(env, true, "system() failed");
     }
 
     ret = system("echo out > /sys/class/gpio/gpio26/direction");
     if (ret == -1) {
         char buf[500];
         sprintf(buf, "Error setting direction of GPIO 26: %s", strerror(errno));
-        return makeOptionalString(env, false, buf);
+        return makeOptionalString(env, true, buf);
+    } else if (ret != 0) {
+        return makeOptionalString(env, true, "system() failed");
     }
 
     return makeOptionalString(env, false, nullptr);
