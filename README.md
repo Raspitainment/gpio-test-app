@@ -1,5 +1,5 @@
 # TestApp
 
 ```
-su root chown -R u10_a117 /sys/class/gpio/
+su root chmod -R 0777 /sys/class/gpio/
 ```
