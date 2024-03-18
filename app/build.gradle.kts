@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.raspitainment"
+    namespace = "raspitainment.gpiotest"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.raspitainment"
+        applicationId = "raspitainment.gpiotest"
         minSdk = 34
         targetSdk = 34
         versionCode = 1

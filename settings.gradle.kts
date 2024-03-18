@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Raspitainment"
+rootProject.name = "gpiotest"
 include(":app")

@@ -22,7 +22,7 @@ jobject makeOptionalString(JNIEnv *env, bool present, const char *string) {
 
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_com_example_raspitainment_MainActivity_00024Companion_setupGpio(JNIEnv *env, jobject thiz) {
+Java_raspitainment_gpiotest_MainActivity_00024Companion_setupGpio(JNIEnv *env, jobject thiz) {
     int ret = system("echo 26 > /sys/class/gpio/export");
     if (ret == -1) {
         char buf[500];
@@ -45,7 +45,7 @@ Java_com_example_raspitainment_MainActivity_00024Companion_setupGpio(JNIEnv *env
 }
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_com_example_raspitainment_MainActivity_00024Companion_getValue(JNIEnv *env, jobject thiz) {
+Java_raspitainment_gpiotest_MainActivity_00024Companion_getValue(JNIEnv *env, jobject thiz) {
     FILE *fp = fopen("/sys/class/gpio/gpio26/value", "r");
     if (fp == nullptr) {
         char buf[500];
@@ -62,6 +62,6 @@ Java_com_example_raspitainment_MainActivity_00024Companion_getValue(JNIEnv *env,
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_raspitainment_MainActivity_00024Companion_closeGpio(JNIEnv *env, jobject thiz) {
+Java_raspitainment_gpiotest_MainActivity_00024Companion_closeGpio(JNIEnv *env, jobject thiz) {
     system("echo 26 > /sys/class/gpio/unexport");
 }

@@ -1,4 +1,4 @@
-package com.example.raspitainment
+package raspitainment.gpiotest
 
 import android.content.Context
 import android.os.Bundle
@@ -6,46 +6,40 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallTopAppBar
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.getSystemService
-import com.example.raspitainment.ui.theme.RaspitainmentTheme
 import kotlinx.coroutines.delay
-import java.io.Console
+import raspitainment.gpiotest.ui.theme.gpiotestTheme
 import java.util.Optional
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     companion object {
         init {
-            System.loadLibrary("raspitainment")
+            System.loadLibrary("gpiotest")
         }
 
         external fun setupGpio(): Optional<String>
@@ -58,6 +52,8 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    private var errorValue: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -67,26 +63,26 @@ class MainActivity : ComponentActivity() {
 
                 val notificationService =
                     getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-                val notification = android.app.Notification.Builder(this, "raspitainment")
-                    .setContentTitle("Raspitainment").setContentText("Error: $error")
+                val notification = android.app.Notification.Builder(this, "gpiotest")
+                    .setContentTitle("GPIO-Test").setContentText("Error: $error")
                     .setSmallIcon(android.R.drawable.stat_notify_error).build()
 
                 Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
-
+                errorValue = error
                 notificationService.notify(1, notification)
             }
         }
 
         setContent {
-            RaspitainmentContent()
+            GpiotestContent()
         }
     }
 
     @Composable
-    fun RaspitainmentContent() {
+    fun GpiotestContent() {
         var gpioValue by remember { mutableStateOf(false) }
 
-        RaspitainmentTheme {
+        gpiotestTheme {
             LaunchedEffect(Unit) {
                 while (true) {
                     gpioValue = getValue()
@@ -96,11 +92,15 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 topBar = {
-                    TopAppBar(title = { Text(text = "Raspitainment") })
+                    TopAppBar(title = { Text(text = "GPIO-Test") })
                 },
                 bottomBar = {
-                    BottomAppBar {
-                        Text(text = "Bottom bar")
+                    if (errorValue.isNotEmpty()) {
+                        BottomAppBar {
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text(text = "Error: $errorValue", textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 },
                 floatingActionButton = {
@@ -111,12 +111,21 @@ class MainActivity : ComponentActivity() {
                     }
                 },
             ) { innerPadding ->
+                val cColor = if (gpioValue) {
+                    Color.Red
+                } else {
+                    Color.Green
+                }
                 Column(
                     modifier = Modifier.padding(innerPadding),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Alignment.CenterHorizontally
                 ) {
                     Card(
-                        modifier = Modifier.size(200.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = cColor
+                        )
                     ) {
                         Text(
                             text = "GPIO value: ${if (gpioValue) "HIGH" else "LOW"}",

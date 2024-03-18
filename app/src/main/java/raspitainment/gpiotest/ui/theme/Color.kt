@@ -1,4 +1,4 @@
-package com.example.raspitainment.ui.theme
+package raspitainment.gpiotest.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
