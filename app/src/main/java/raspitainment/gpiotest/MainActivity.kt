@@ -1,8 +1,6 @@
 package raspitainment.gpiotest
 
-import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import raspitainment.gpiotest.ui.theme.gpiotestTheme
+import raspitainment.gpiotest.ui.theme.GpiotestTheme
 import java.util.Optional
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,50 +40,40 @@ class MainActivity : ComponentActivity() {
             System.loadLibrary("gpiotest")
         }
 
-        external fun setupGpio(): Optional<String>
-        external fun getValue(): Boolean
-        external fun closeGpio()
+        external fun setupGPIO(): Any
+        external fun readGPIO(): Any
+        external fun closeGPIO(): Any
     }
 
     override fun onDestroy() {
-        closeGpio()
+        closeGPIO()
         super.onDestroy()
     }
-
-    private var errorValue: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setupGpio().ifPresent { error ->
-            run {
-                println("Error: $error")
-
-                val notificationService =
-                    getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-                val notification = android.app.Notification.Builder(this, "gpiotest")
-                    .setContentTitle("GPIO-Test").setContentText("Error: $error")
-                    .setSmallIcon(android.R.drawable.stat_notify_error).build()
-
-                Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
-                errorValue = error
-                notificationService.notify(1, notification)
-            }
-        }
-
         setContent {
-            GpiotestContent()
+            GPIOTestContent()
         }
     }
 
     @Composable
-    fun GpiotestContent() {
-        var gpioValue by remember { mutableStateOf(false) }
+    fun GPIOTestContent() {
+        var gpioValue by remember { mutableStateOf(Optional.empty<Boolean>()) }
+        var setupErrorValue by remember { mutableStateOf(Optional.empty<String>()) }
+        var readErrorValue by remember { mutableStateOf(Optional.empty<String>()) }
 
-        gpiotestTheme {
+        GpiotestTheme {
             LaunchedEffect(Unit) {
                 while (true) {
-                    gpioValue = getValue()
+                    val value = readGPIO()
+                    if (value is Boolean) {
+                        gpioValue = Optional.of(value)
+                    } else {
+                        readErrorValue = Optional.of(value.toString())
+                    }
+
                     delay(200)
                 }
             }
@@ -95,27 +83,25 @@ class MainActivity : ComponentActivity() {
                     TopAppBar(title = { Text(text = "GPIO-Test") })
                 },
                 bottomBar = {
-                    if (errorValue.isNotEmpty()) {
-                        BottomAppBar {
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(text = "Error: $errorValue", textAlign = TextAlign.Center)
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
+                    BottomAppBar {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(text = "Setup error: ${setupErrorValue.orElse("None")}\nRead error: ${readErrorValue.orElse("None")}")
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 },
                 floatingActionButton = {
                     FloatingActionButton(onClick = {
-                        Toast.makeText(this, "Hello world!", Toast.LENGTH_SHORT).show()
+                        val result = setupGPIO()
+                        setupErrorValue = if (result is String) {
+                            Optional.of(result)
+                        } else {
+                            Optional.empty()
+                        }
                     }) {
-                        Icon(Icons.Default.Info, contentDescription = "Info")
+                        Icon(Icons.Default.Build, contentDescription = "Setup")
                     }
                 },
             ) { innerPadding ->
-                val cColor = if (gpioValue) {
-                    Color.Red
-                } else {
-                    Color.Green
-                }
                 Column(
                     modifier = Modifier.padding(innerPadding),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -124,11 +110,11 @@ class MainActivity : ComponentActivity() {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = cColor
+                            containerColor = gpioValue.map { if (it) Color.Green else Color.Red }.orElse(Color.Gray)
                         )
                     ) {
                         Text(
-                            text = "GPIO value: ${if (gpioValue) "HIGH" else "LOW"}",
+                            text = "GPIO value: ${gpioValue.map { if (it) "HIGH" else "LOW" }.orElse("Unknown")}",
                             modifier = Modifier.padding(16.dp),
                             textAlign = TextAlign.Center
                         )
